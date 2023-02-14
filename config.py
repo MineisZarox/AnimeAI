@@ -1,8 +1,8 @@
 class chivar(object):
-    API_ID = 7252696
-    API_HASH = "5258ec8dcf079134364225fe060fcf37"
-    BOT_TOKEN = "6150871974:AAGAv2dOGKfq02ItL2kjsRHJAlzFNJHb5nA"
-    BOT_USERNAME = "@Paintyourselfrobot"
-    OWNER_ID = 5725069311
-    SUDO_IDS = "2071151067 5725069311"
-    LOG_GRP = -1001543387017
+    API_ID = int(os.getenv("API_ID"))
+    API_HASH = os.getenv("API_HASH")
+    BOT_TOKEN = os.getenv("BOT_TOKEN")
+    BOT_USERNAME = os.getenv("BOT_UN")
+    OWNER_ID = int(os.getenv("OWNER_ID"))
+    SUDO_IDS = os.getenv("SUDO_IIDS")
+    LOG_GRP = int(os.getenv("LOG_GRP"))
