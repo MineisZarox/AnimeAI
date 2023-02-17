@@ -14,6 +14,8 @@ class ErrorCodes(Enum):
 
 @dataclass
 class AnimeResponse:
+    onem: 0
+    errormsg: str
     code: int
     msg: str
     images: list = ""
@@ -23,23 +25,22 @@ class AnimeResponse:
 
     def __post_init__(self):
         success = False
-
+        self.onem = 0
         match ErrorCodes(self.code):
             case ErrorCodes.AUTH_FAILED:
-                print("Auth failed. Don't know how to solve this one.")
+                self.errormsg = "Auth failed. Don't know how to solve this one."
             case ErrorCodes.NUDITY:
-                print("Image rejected. Nudity isn't allowed.")
+                self.errormsg = "Image rejected. Nudity isn't allowed."
             case ErrorCodes.NO_FACE:
-                print("No face in image. Can't process.")
+                self.errormsg = "No face in image. Can't process."
             case ErrorCodes.USER_IP_COUNTRY:
-                print("Your ip is not from china, try using vpn or proxies.")
+                self.errormsg = "Your ip is not from china, try using vpn or proxies."
             case ErrorCodes.PARAM_INVALID:
-                print("Invalid file format. Must be one of jpeg|gif|png|bmp|ico|svg|tiff|ai|drw|pct|psp|xcf|psd|raw|webp.")
+                self.errormsg = "Invalid file format. Must be one of jpeg|gif|png|bmp|ico|svg|tiff|ai|drw|pct|psp|xcf|psd|raw|webp."
             case ErrorCodes.CONNECTION_CLOSED:
-                print("The connection was forcibly closed by the host. (Is the image too big?)")
+                self.errormsg = "The connection was forcibly closed by the host. (Is the image too big?)"
             case ErrorCodes.SUCCESS:
                 self.extra = json.loads(self.extra)["img_urls"]
+                self.onem = 1
                 success = True
 
-        if not success:
-            exit(1)
