@@ -1,88 +1,515 @@
-from PIL import Image
-from telethon import events
+
+from datetime import datetime
+from telethon import events, Button
 from .. import aai, Vars
-from aaai.anime import convertai
-import random
-import sys
-import os
+from . import start_msg, help_msg
 
 sudos = list(map(int, (Vars.SUDO_IDS).split(" ")))
-httpsproxy = "http://178.208.66.243:3128"
 
-def crop(out):
-    image = Image.open(out)
-    w, h = image.size
-    image.crop((0, 0, w, h-181)).save(out)
-    if w>h:
-        image.crop(((w/2)+7, 22, w-22, h-210)).save("sec"+out)
-    else:
-        image.crop((22, (h-170)/2, w-22, h-210)).save("sec"+out)
-    return [out, "sec"+out]
-
-
-@aai.on(events.NewMessage(incoming=True))
+text = help_msg
+    
+@aai.on(events.NewMessage(incoming=True, pattern=f"^/start({Vars.BOT_USERNAME})$"))
 async def start(event):
     user = await aai.get_entity(int(event.sender.id))
-    reply = await event.get_reply_message()
-    img = None
-    if event.text == "/start" and event.is_private:
-        await event.reply(f"Hi {user.first_name} 👋 Send me a photo to convert it into a 2D anime art")
-    if event.is_private and event.photo:
-        img = await event.download_media()
-    if reply and reply.photo and event.text == "/convrt" :
-        img = await reply.download_media()
-    if img:
-        kk = await event.reply("Processing... ✨")
-        try:
-            ome = convertai(img, httpsproxy)
-
-            if os.path.exists(ome):
-                crpp = crop(ome)
-                await event.reply(file=crpp[0])
-                await event.reply(file=crpp[1])
-                await kk.delete()
-            else:
-                await kk.edit(f"Error: {ome}")
-            try:
-                os.remove(img)
-                os.remove(ome)
-                os.remove("sec"+ome)
-            except:
-                pass
-        except Exception as e:
-            try:
-                os.remove(img)
-            except:
-                pass
-
-            mmm = await aai.send_message(Vars.LOG_GRP, f"{e}")
-            await kk.edit(f"Failed. Try again after few min or report/forward [here](t.me/zaroxhub) Error id `{mmm.id}`", link_preview=False)
+    if event.is_group: await event.reply(
+        start_msg,
+        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Update", "https://t.me/zaroxverse")]],
+        link_preview=True
+    )
 
         
-@aai.on(events.NewMessage(incoming=True))
-async def _(event):
+@aai.on(events.NewMessage(incoming=True, pattern=f"^/help({Vars.BOT_USERNAME})$"))
+async def help(event):
+    
+    user = event.sender.id
+    if event.is_group: await event.reply(
+        text,
+        buttons=[Button.inline("Inline", data=f"inline_{user}")],
+        link_preview=False
+    )
+
+
+        
+@aai.on(events.NewMessage(incoming=True, pattern=f"^/help({Vars.BOT_USERNAME})?$"))
+async def help(event):
+    user = event.sender.id
+    if event.is_private: await event.reply(
+        text,
+        buttons=[Button.inline("Inline", data=f"inline_{user}")],
+        link_preview=False
+    )
+        
+
+@aai.on(events.NewMessage(incoming=True, pattern=f"^/ping({Vars.BOT_USERNAME})?$"))
+async def ping(event):
     user = await aai.get_entity(int(event.sender.id))
-    reply = await event.get_reply_message()
-    if event.text.startswith("/logs") and user.id in sudos:
-        try:
-            id = reply.text.split(" ")[-1] if reply else event.text.split(" ")[1]
-            if id != None and id.isdigit():
-                msg = await aai.get_messages(Vars.LOG_GRP, ids=int(id))
-                await event.reply(f"`{msg.message}`")
-            else:
-                id = id[1:-1]
-                if id != None and id.isdigit():
-                    msg = await aai.get_messages(Vars.LOG_GRP, ids=int(id))
-                    await event.reply(f"`{msg.message}`")
-                
-            
-            
-        except Exception as e:
-            await event.reply(f"Invalid id {e}")
-        
-    if event.text.startswith("/chpro") and user.id in sudos:
-        proxy = reply.text.split(" ")[-1] if reply else event.text.split(" ")[1]
-        global httpsproxy
-        httpsproxy = f"https://{proxy}"
-        await event.reply(f"Changed proxy url to {httpsproxy}")
-        print(httpsproxy)
+    if user.id not in sudos:
+        return
+    start = datetime.now()
+    ping = await event.reply("ᴘɪɴɢ")
+    end = datetime.now()
+    ms = (end - start).microseconds / 1000
+    await ping.edit(f"ᴘɪɴɢ :`{ms} ms`")
+    
+    
+
+    
+@aai.on(events.NewMessage(incoming=True,  pattern=f"^/start({Vars.BOT_USERNAME})? ?(.*)?$"))
+async def start(event):
+    user = await aai.get_entity(int(event.sender.id))
+    web = event.pattern_match.group(2)
+    print(web)
+    startm = f"#START\n**User**: [{user.first_name}](tg://user?id={user.id})\n**Username**: @{user.username}\n**ID**: {user.id}"
+    if event.is_private:
+        if web and web == "web":
+            startm += "\n\n**From Web**"
+        await aai.send_message(int(Vars.OWNER_ID), startm)
+        await event.reply(
+        start_msg,
+        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Update", "https://t.me/zaroxverse")]],
+        link_preview=True)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
+@aai.on(events.NewMessage(incoming=True))
+async def copypaste(event):
+    user_ = int(event.sender_id)
+    if user_ != Vars.OWNER_ID and event.is_private:
+          await event.forward_to(Vars.OWNER_ID)

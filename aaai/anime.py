@@ -1,11 +1,11 @@
 from aaai.util import save_anime_image
-from aaai.anime_post import AnimePost
+from aaai.anime_post import get_anime_image
 import random
 import sys
 
 
 
-def convertai(name, proxy):
+async def convertai(name, proxy):
     if len(name) < 2:
         return "Provide a valid Image file"
     
@@ -14,12 +14,12 @@ def convertai(name, proxy):
 
     filename = name
     print("Processing image: ", filename)
-    anime = AnimePost.get_anime_image(filename, proxy)
+    anime = await get_anime_image(filename, proxy)
     if anime.onem == 0:
         output_name = anime.errormsg
         print(anime.errormsg)
     else:
-        save_anime_image(output_name, anime.extra[0])
+        await save_anime_image(output_name, anime.extra[0])
         print("Done 2")
     
     return output_name
