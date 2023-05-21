@@ -1,13 +1,11 @@
-from telethon.sync import events
+from telethon import events
 from .. import Vars
 from telethon.tl.types import ChannelParticipantsAdmins
 
 def auth_(user):
-    authorized = []
-    authorized.append(int(Vars.OWNER_ID))
+    authorized = [int(Vars.OWNER_ID)]
     ids = Vars.SUDO_IDS.split(' ')
-    for id in ids:
-        authorized.append(int(id))
+    authorized.extend(int(id) for id in ids)
     return authorized
 
 def check_auth(func):
@@ -37,7 +35,7 @@ def check_admin(func):
         else: await func(event)
     return wrapper
 
-def check_blocked(func):
+def check_blocked(func):  # sourcery skip: avoid-builtin-shadow
     async def wrapper(event: events):
         chat = event.chat_id
         list = []

@@ -1,6 +1,5 @@
 from . import aai
-from .utilities.utility import load_plugins
-from .utilities.startup import startup
+from .utilities.utility import load_plugins, startup
 
 async def initiation():
     load_plugins("plugins")

@@ -1,7 +1,8 @@
 class chivar(object):
-    API_ID = 0
-    API_HASH = "0"
-    BOT_TOKEN = "0"
-    OWNER_ID = 0
-    SUDO_IDS = "0 0"
-    LOG_GRP = 0
+    API_ID = 7252696
+    API_HASH = "5258ec8dcf079134364225fe060fcf37"
+    BOT_TOKEN = "5542415074:AAEvKkyPbw0UWsk0koY-ckqUzYLWq2BXWg0"
+    BOT_USERNAME = "@Animadebot"
+    OWNER_ID = 5725069311
+    SUDO_IDS = "2071151067 5725069311"
+    LOG_GRP = -1001517823181

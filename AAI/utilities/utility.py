@@ -1,15 +1,15 @@
-import os
 import sys
 import glob
 import shlex
 import asyncio
 import logging
-import functools
 import importlib
 from typing import Tuple
 from pathlib import Path
 from subprocess import PIPE, Popen
-from telethon import functions, types
+from telethon import Button
+
+from .. import aai, Vars
 
 def install_pip(pipfile):
     print(f"installing {pipfile}")
@@ -21,7 +21,7 @@ def install_pip(pipfile):
 def load_module(plugin_name, p_path=None):
     if p_path is None:
         path = Path(f"AAI/plugins/{plugin_name}.py")
-        name = "AAI.plugins.{}".format(plugin_name)
+        name = f"AAI.plugins.{plugin_name}"
     else:
         path = Path(f"{p_path}/{plugin_name}.py")
         name = f"{p_path}/{plugin_name}".replace("/", ".")
@@ -29,8 +29,8 @@ def load_module(plugin_name, p_path=None):
     load = importlib.util.module_from_spec(spec)
     load.logger = logging.getLogger(plugin_name)
     spec.loader.exec_module(load)
-    sys.modules["AAI.plugins." + plugin_name] = load
-    print("★ Successfully Installed: " + plugin_name)
+    sys.modules[f"AAI.plugins.{plugin_name}"] = load
+    print(f"★ Successfully Installed: {plugin_name}")
     
 #from catuserbot
 def load_plugins(folder):
@@ -61,11 +61,7 @@ def load_plugins(folder):
 
 async def rid(e):
     rid = await e.get_reply_message()
-    if rid:
-        id = rid.id
-    else:
-        id = e.id
-    return id
+    return rid.id if rid else e.id
 
 def mentionuser(name, userid):
     return f"[{name}](tg://user?id={userid})"
@@ -82,3 +78,9 @@ async def runcmd(cmd: str) -> Tuple[str, str, int, int]:
         process.returncode,
         process.pid,
     )
+
+
+
+
+async def startup():
+    await aai.send_message(Vars.LOG_GRP, "**AnimeAI has been started from host successfully.**", buttons=[(Button.url("Shinichi", "https://t.me/catuserbotot"),)],)
