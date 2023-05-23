@@ -14,12 +14,12 @@ Use /convrt command by replying to any image anywhere
 For any concern, appreciation or suggestion contact @Zarox
 """
 
-async def record_user(id):
+async def record(id, file="u.txt"):
     ids = []
-    with open("AAI/res/u.txt")as file:
+    with open(f"AAI/res/{file}")as file:
         ids = list(map(lambda x: int(x[:-1]), list(set(file.readlines()))))
         
-    with open("AAI/res/u.txt", "a+")as file:
+    with open(f"AAI/res/{file}", "a+")as file:
         if id in ids:
             return 
         else:

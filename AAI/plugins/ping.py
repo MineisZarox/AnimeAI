@@ -2,7 +2,7 @@
 from datetime import datetime
 from telethon import events, Button
 from .. import aai, Vars
-from . import start_msg, help_msg
+from . import start_msg, help_msg, record
 
 sudos = list(map(int, (Vars.SUDO_IDS).split(" ")))
 
@@ -11,6 +11,7 @@ text = help_msg
 @aai.on(events.NewMessage(incoming=True, pattern=f"^/start({Vars.BOT_USERNAME})$"))
 async def start(event):
     user = await aai.get_entity(int(event.sender.id))
+    await record(user.id)
     if event.is_group: await event.reply(
         await start_msg(user.first_name),
         buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],

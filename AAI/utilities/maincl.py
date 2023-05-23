@@ -1,3 +1,4 @@
+import os
 import re
 import json
 import base64
@@ -8,6 +9,8 @@ from PIL import Image
 from io import BytesIO
 from aiohttp import ClientSession
 from urllib.parse import quote
+from telethon import Button
+
 from .. import Vars
 # "ai_painting_spring_entry"
 # "ai_painting_spring_img_entry"
@@ -182,17 +185,24 @@ class Animade:
                 response: dict = await resp.json()
         return response
 
-    async def process(self, filename):
-        baseImage = base64.encodebytes(open(filename, "rb").read()).decode()
-        if self.MODE == "qq":
+    async def process(self, event, filename):
+        retries = 7
+        if self.MODE == "3d":
+            result = await self.qq3d(base64.encodebytes(open(filename, "rb").read()).decode())
+            return result['media_info_list'][0]['media_data']
+        
+        elif self.MODE == "qq":
             baseImage = base64.encodebytes(open(filename, "rb").read()).decode()
             result = await self.qq(baseImage)
             if result['code'] == 1001:
                 result = await self.qq(base64.b64encode((await self.face_hack(filename))).decode('utf-8'))
-            return result
-        elif self.MODE == "vid":
-            return await self.qq(baseImage, mode="ai_painting_anime_video_entry")
-        elif self.MODE == "3d":
-            return await self.qq3d(baseImage)
-        else:
-            None
+            while result['code'] == 2111 and retries > 0:
+                retries -= 1
+                result = await self.qq(event, baseImage)
+            if result['code'] != 0:
+                os.remove(filename)
+                await event.edit(f'Error :`{result["msg"]}`\n\nIf you would like to support this free project and move it to better server with less errors. Contact @zarox', buttons=[Button.url("Support", url="https:/t.me/execal")])
+                return None
+            output = json.loads(result['extra'])['img_urls'][0]
+            output = await self.save_crop(output)
+            return output
