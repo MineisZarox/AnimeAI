@@ -92,7 +92,7 @@ class Animade:
             image.crop((22, (h-170)/2, w-22, h-210)).save(f"sec{output_name}")
         return [output_name, f"sec{output_name}"]
 
-    def auth(self, data: dict):
+    async def auth(self, data: dict):
         r = json.dumps(data)
         pattern = "/%[89ABab]/g"
         parse = quote(r)
@@ -172,7 +172,7 @@ class Animade:
             'Origin': 'https://h5.tu.qq.com',
             'Referer': 'https://h5.tu.qq.com/',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-            'x-sign-value': str(self.auth(data)),
+            'x-sign-value': str(await self.auth(data)),
             'x-sign-version': 'v1',
         }
         
