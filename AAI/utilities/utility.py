@@ -1,517 +1,83 @@
+import os
+import sys
+import glob
+import shlex
+import asyncio
+import logging
+import functools
+import importlib
+from typing import Tuple
+from pathlib import Path
+from subprocess import PIPE, Popen
 
-from datetime import datetime
-from telethon import events, Button
-from .. import aai, Vars
-from . import start_msg, help_msg
+def install_pip(pipfile):
+    print(f"installing {pipfile}")
+    pip_cmd = ["pip", "install", f"{pipfile}"]
+    process = Popen(pip_cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = process.communicate()
+    return stdout
 
-sudos = list(map(int, (Vars.SUDO_IDS).split(" ")))
-
-text = help_msg
+def load_module(plugin_name, p_path=None):
+    if p_path is None:
+        path = Path(f"AAI/plugins/{plugin_name}.py")
+        name = "AAI.plugins.{}".format(plugin_name)
+    else:
+        path = Path(f"{p_path}/{plugin_name}.py")
+        name = f"{p_path}/{plugin_name}".replace("/", ".")
+    spec = importlib.util.spec_from_file_location(name, path)
+    load = importlib.util.module_from_spec(spec)
+    load.logger = logging.getLogger(plugin_name)
+    spec.loader.exec_module(load)
+    sys.modules["AAI.plugins." + plugin_name] = load
+    print("★ Successfully Installed: " + plugin_name)
     
-@aai.on(events.NewMessage(incoming=True, pattern=f"^/start({Vars.BOT_USERNAME})$"))
-async def start(event):
-    user = await aai.get_entity(int(event.sender.id))
-    if event.is_group: await event.reply(
-        await start_msg(user.first_name),
-        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
-        link_preview=True
+#from catuserbot
+def load_plugins(folder):
+    path = f"AAI/{folder}/*.py"
+    files = glob.glob(path)
+    files.sort()
+    for name in files:
+        with open(name) as f:
+            path1 = Path(f.name)
+            shortname = path1.stem
+            try:
+                flag = True
+                check = 0
+                while flag:
+                    try:
+                        load_module(
+                            shortname.replace(".py", ""),
+                            p_path=f"AAI/{folder}",
+                        )
+                        break
+                    except ModuleNotFoundError as e:
+                        install_pip(e.name)
+                        check += 1
+                        if check > 5:
+                            break
+            except Exception as e:
+                print(f"unable to load {shortname} because of error {e}")
+
+async def rid(e):
+    rid = await e.get_reply_message()
+    if rid:
+        id = rid.id
+    else:
+        id = e.id
+    return id
+
+def mentionuser(name, userid):
+    return f"[{name}](tg://user?id={userid})"
+
+async def runcmd(cmd: str) -> Tuple[str, str, int, int]:
+    args = shlex.split(cmd)
+    process = await asyncio.create_subprocess_exec(
+        *args, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
     )
-
-        
-@aai.on(events.NewMessage(incoming=True, pattern=f"^/help({Vars.BOT_USERNAME})$"))
-async def help(event):
-    
-    if event.is_group:
-        user = event.sender.id
-        if event.is_group: await event.reply(
-            text,
-            buttons=[Button.inline("Inline", data=f"inline_{user}")],
-            link_preview=False
-        )
-
-
-        
-@aai.on(events.NewMessage(incoming=True, pattern=f"^/help({Vars.BOT_USERNAME})?$"))
-async def help(event):
-    if event.is_private:
-        user = event.sender.id
-        if event.is_private: await event.reply(
-            text,
-            buttons=[Button.inline("Inline", data=f"inline_{user}")],
-            link_preview=False
-        )
-        
-
-@aai.on(events.NewMessage(incoming=True, pattern=f"^/ping({Vars.BOT_USERNAME})?$"))
-async def ping(event):
-    user = await aai.get_entity(int(event.sender.id))
-    if user.id not in sudos:
-        return
-    start = datetime.now()
-    ping = await event.reply("ᴘɪɴɢ")
-    end = datetime.now()
-    ms = (end - start).microseconds / 1000
-    await ping.edit(f"ᴘɪɴɢ :`{ms} ms`")
-    
-    
-
-    
-@aai.on(events.NewMessage(incoming=True,  pattern=f"^/start({Vars.BOT_USERNAME})? ?(.*)?$"))
-async def start(event):
-    user = await aai.get_entity(int(event.sender.id))
-    web = event.pattern_match.group(2)
-
-    if event.is_private:
-        startm = f"#START\n**User**: [{user.first_name}](tg://user?id={user.id})\n**Username**: @{user.username}\n**ID**: {user.id}"
-        if web and web == "web":
-            startm += "\n\n**From Web**"
-        await aai.send_message(int(Vars.LOG_GRP), startm)
-        await event.reply(
-        await start_msg(user.first_name),
-        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
-        link_preview=True)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-    
-@aai.on(events.NewMessage(incoming=True))
-async def copypaste(event):
-    user_ = int(event.sender_id)
-    if user_ != Vars.OWNER_ID and event.is_private and event.media:
-          await event.forward_to(-1001495812434)
+    stdout, stderr = await process.communicate()
+    return (
+        stdout.decode("utf-8", "replace").strip(),
+        stderr.decode("utf-8", "replace").strip(),
+        process.returncode,
+        process.pid,
+    )
