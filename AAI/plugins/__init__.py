@@ -14,13 +14,13 @@ Use /convrt command by replying to any image anywhere
 For any concern, appreciation or suggestion contact @Zarox
 """
 
-async def record(id, file="u.txt"):
+async def record(idd, fie="u.txt"):
     ids = []
-    with open(f"AAI/res/{file}")as file:
+    with open(f"AAI/res/{fie}")as file:
         ids = list(map(lambda x: int(x[:-1]), list(set(file.readlines()))))
         
-    with open(f"AAI/res/{file}", "a+")as file:
-        if id in ids:
+    with open(f"AAI/res/{fie}", "a+")as file:
+        if idd in ids:
             return 
         else:
-            file.write(f"{id}\n")
+            file.write(f"{idd}\n")

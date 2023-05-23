@@ -61,7 +61,7 @@ async def ping(event):
 async def start(event):
     user = await aai.get_entity(int(event.sender.id))
     web = event.pattern_match.group(2)
-
+    await record(user.id)
     if event.is_private:
         startm = f"#START\n**User**: [{user.first_name}](tg://user?id={user.id})\n**Username**: @{user.username}\n**ID**: {user.id}"
         if web and web == "web":

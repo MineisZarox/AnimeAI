@@ -158,9 +158,9 @@ class Animade:
     async def qq(self, baseimage, mode=mode):
         proxy = Vars.PROXY
         if Vars.LOCALCH:
-            url = "https://ai.tu.qq.com/overseas/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
-        else:
             url = "https://ai.tu.qq.com/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
+        else:
+            url = "https://ai.tu.qq.com/overseas/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
         data = {
             "busiId": mode,
             "extra": "{\"face_rects\":[],\"version\":2,\"platform\":\"web\",\"data_report\":{\"parent_trace_id\":\"2ac8ec9d-a574-7952-0f8c-e80f2adf7105\",\"root_channel\":\"\",\"level\":0}}",#'{"face_rects":[],"version":2,"platform":"web","data_report":{"parent_trace_id":"2ac8ec9d-a574-7952-0f8c-e80f2adf7105","root_channel":"","level":0}}',
@@ -201,7 +201,7 @@ class Animade:
                 result = await self.qq(event, baseImage)
             if result['code'] != 0:
                 os.remove(filename)
-                await event.edit(f'Error :`{result["msg"]}`\n\nIf you would like to support this free project and move it to better server with less errors. Contact @zarox', buttons=[Button.url("Support", url="https:/t.me/execal")])
+                await event.edit(f'Error :`{result["msg"]}`\n\nIf you would like to support this free project and move it to better server with less errors. Contact @zarox', buttons=[Button.url("Support", url="https://t.me/execal")])
                 return None
             output = json.loads(result['extra'])['img_urls'][0]
             output = await self.save_crop(output)

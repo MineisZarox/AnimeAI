@@ -17,7 +17,6 @@ from telethon.errors.rpcerrorlist import YouBlockedUserError
 from telethon.tl.functions.contacts import UnblockRequest as unblock
 
 from config import chivar as Vars
-from AAI.plugins import start_msg, record
 
 
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
@@ -36,6 +35,33 @@ client.bot = TelegramClient(
         auto_reconnect=True,
         connection_retries=None,
     ).start(bot_token=Vars.BOT_TOKEN)
+
+async def start_msg(name):
+    return f"""Hi {name} 👋[‍](https://telegra.ph/file/8c2160c0b218d61ac0b39.jpg). Send me a photo to convert it into a 2D anime art using AI
+    
+If the bot stops or not convert images contact the dev, [@zarox]
+
+Send /help
+"""
+
+
+help_msg = """Send your photos or selfies to convert them in 2d Anime art using AI
+or
+Use /convrt command by replying to any image anywhere
+
+For any concern, appreciation or suggestion contact @Zarox
+"""
+
+async def record(idd, fi="u.txt"):
+    ids = []
+    with open(f"AAI/res/{fi}")as file:
+        ids = list(map(lambda x: int(x[:-1]), list(set(file.readlines()))))
+        
+    with open(f"AAI/res/{fi}", "a+")as file:
+        if idd in ids:
+            return 
+        else:
+            file.write(f"{idd}\n")
 
 async def qq3d(filename):
     baseImage = base64.encodebytes(open(filename, "rb").read()).decode()
@@ -282,41 +308,47 @@ async def comvrt(event):
         with contextlib.suppress(Exception):
             os.remove(res)
 
-@client.bot.on(events.NewMessage(incoming=True))
+@client.bot.on(events.NewMessage(incoming=True, pattern="/(start|qq|qq3d)"))
 async def checker(event):
-    if event.is_private:
-        user = await client.get_entity(int(event.sender.id))
-        await record(user.id)
-    else:
-        await record(event.chat_id, file="g.txt")
     bot = Vars.BOT_USERNAME
+    user = await client.get_entity(int(event.sender.id))
+    if event.sender.id == 6034486765: return
     async with client.conversation(bot) as conv:
         msg = await conv.send_message("/start")
+        await msg.delete()
         try:
             res = await conv.get_response(timeout=3)
+            await res.delete()
         except asyncio.TimeoutError:
-            cmd = "screen -S aaipy -X stuff '^C python -m AAI\n'"
+            cmd = "screen -S aai -X stuff '^C python -m AAI\n'"
             process = await asyncio.create_subprocess_shell(
             cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE
             )
             stdout, stderr = await process.communicate()
             result = str(stdout.decode().strip()) + str(stderr.decode().strip())
-            await client.send_message(Vars.LOG_GRP, "#RESTART on Ded")
+            await event.client.send_message(Vars.LOG_GRP, "#RESTART on Ded")
             await event.reply(
                 await start_msg(user.first_name),
                 buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
                 link_preview=True
             )
             print("Restarted Animade Successfully..")
+    if event.is_private:
+        await record(user.id)
+    else:
+        await record(event.chat_id, fi="g.txt")
+
+
 
 async def main():
     await client.start()
     await client.bot.start()
-    await client.run_until_disconnected()
-    await client.bot.run_until_disconnected()
+	# New Line Added
+    while True:
+        f1 = loop.create_task(client.run_until_disconnected())
+        f2 = loop.create_task(client.bot.run_until_disconnected())
+        await asyncio.wait([f2, f1])
 
-client.start()
-client.run_until_disconnected()
-
-with client, client.bot:
-    client.loop.run_until_complete(main())
+loop = asyncio.get_event_loop()
+loop.run_until_complete(main())
+loop.close()
