@@ -10,6 +10,11 @@ from typing import Tuple
 from pathlib import Path
 from subprocess import PIPE, Popen
 
+from .. import aai, Vars
+
+async def startup():
+    await aai.send_message(Vars.LOG_GRP, "#STARTED\n**AnimeAI has been started from host successfully.**")
+
 def install_pip(pipfile):
     print(f"installing {pipfile}")
     pip_cmd = ["pip", "install", f"{pipfile}"]
