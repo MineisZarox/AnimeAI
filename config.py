@@ -6,3 +6,5 @@ class chivar(object):
     OWNER_ID = 5725069311
     SUDO_IDS = "2071151067 5725069311"
     LOG_GRP = -1001517823181
+    PROXY = "http://dqwelxzk:ngkidbpl2ci0@45.155.68.129:8133"
+    LOCALCH = False

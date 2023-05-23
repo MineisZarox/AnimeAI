@@ -1,7 +1,7 @@
 import contextlib
 import os
 import json
-from telethon import events
+from telethon import events, Button
 from .. import aai, Vars
 from ..utilities.maincl import Animade
 
@@ -27,7 +27,7 @@ async def main(event):
         if result['code'] != 0:
             os.remove(img)
             await pros.delete()
-            return await event.reply(f'Error {result["msg"]}')
+            return await event.reply(f'Error :`{result["msg"]}`\n\nIf you would like to support this free project and move it to better server with less errors. Contact @zarox', buttons=[Button.url("Support", url="https:/t.me/execal")])
         output = json.loads(result['extra'])['img_urls'][0]
         output = await animeai.save_crop(output)
     try:

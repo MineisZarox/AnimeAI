@@ -5,9 +5,10 @@ import random
 import hashlib
 import requests
 from PIL import Image
+from io import BytesIO
 from aiohttp import ClientSession
 from urllib.parse import quote
-
+from .. import Vars
 # "ai_painting_spring_entry"
 # "ai_painting_spring_img_entry"
 # "different_dimension_me_img_entry"
@@ -20,32 +21,61 @@ class Animade:
     def __init__(self, mode:str):
         self.MODE = mode
 
-    async def concat(self, image, resample=Image.BICUBIC, resize_big_image=True):
-        im1 = Image.open('AAI/res/faceu.png')
-        im2 = Image.open(image)
-        im3 = Image.open('AAI/res/faced.png')
-        if im1.width == im2.width:
-            _im1 = im1
-            _im2 = im2
-            _im3 = im3
-        elif (((im1.width > im2.width) and resize_big_image) or
-            ((im1.width < im2.width) and not resize_big_image)):
-            _im1 = im1.resize((im2.width, int(im1.height * im2.width / im1.width)), resample=resample)
-            _im2 = im2
-            _im3 = im3.resize((im2.width, int(im3.height * im2.width / im3.width)), resample=resample)
+    async def face_hack(self, source_img_buffer):
+        print("Face Hack")
+        FACE_HACK_SIZE = 170
+        FACE_HACK_SPACE = 200
+        face_hack_buffer = Image.open("AAI/res/face.jpg")
+        source_img = Image.open(source_img_buffer)
+        source_img_width, source_img_height = source_img.size
+
+        img_width = source_img_width
+        img_height = source_img_height
+        img = source_img.copy()
+
+        if source_img_height > source_img_width:
+            ratio = source_img_height / source_img_width
+            if ratio > 1.5:
+                img_height = int(source_img_width * 1.5)
+            else:
+                img_width = int(source_img_height / 1.5)
         else:
-            _im1 = im1
-            _im2 = im2.resize((im1.width, int(im2.height * im1.width / im2.width)), resample=resample)
-            _im3 = im3
+            ratio = source_img_width / source_img_height
+            if ratio > 1.5:
+                img_width = int(source_img_height * 1.5)
+            else:
+                img_height = int(source_img_width / 1.5)
 
-        dst = Image.new('RGB', (_im1.width, _im1.height*2 + _im2.height))
-        dst.paste(_im1, (0, 0))
-        dst.paste(_im2, (0, _im1.height))
-        dst.paste(_im3, (0, _im1.height+_im2.height))
-        dst.save(image)
-        return image
+        img_width = max(img_width, FACE_HACK_SIZE)
+        img_height = max(img_height, FACE_HACK_SIZE)
 
-    async def save_crop(self, url):
+        img = img.resize((img_width, img_height), resample=Image.LANCZOS)
+
+        img_buffer = BytesIO()
+        img.save(img_buffer, format='JPEG')
+        img_buffer.seek(0)
+        img_buffer = Image.open(img_buffer)
+        if img_height > img_width:
+            result_img = Image.new("RGB", (img_width, img_height + FACE_HACK_SIZE * 2 + FACE_HACK_SPACE * 2), (255, 255, 255))
+            result_img.paste(img_buffer, (0, FACE_HACK_SIZE + FACE_HACK_SPACE))
+
+            face_hack_img = face_hack_buffer.resize((FACE_HACK_SIZE, FACE_HACK_SIZE), resample=Image.LANCZOS)
+            result_img.paste(face_hack_img, (int(img_width / 2 - FACE_HACK_SIZE / 2), 0))
+            result_img.paste(face_hack_img, (int(img_width / 2 - FACE_HACK_SIZE / 2), FACE_HACK_SIZE + FACE_HACK_SPACE + img_height + FACE_HACK_SPACE))
+        else:
+            result_img = Image.new("RGB", (img_width + FACE_HACK_SIZE * 2 + FACE_HACK_SPACE * 2, img_height), (255, 255, 255))
+            result_img.paste(img_buffer, (FACE_HACK_SIZE + FACE_HACK_SPACE, 0))
+
+            face_hack_img = face_hack_buffer.resize((FACE_HACK_SIZE, FACE_HACK_SIZE), resample=Image.LANCZOS)
+            result_img.paste(face_hack_img, (0, int(img_height / 2 - FACE_HACK_SIZE / 2)))
+            result_img.paste(face_hack_img, (FACE_HACK_SIZE + FACE_HACK_SPACE + img_width + FACE_HACK_SPACE, int(img_height / 2 - FACE_HACK_SIZE / 2)))
+
+        result_buffer = BytesIO()
+        result_img.save(result_buffer, format='JPEG')
+        result_buffer.seek(0)
+        return result_buffer.getvalue()
+
+    async def save_crop(self, url, strip=False):
         output_name = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz1234567890", k=6)) + ".jpg"
         image_bytes = requests.get(url).content
         with open(output_name, "wb") as img:
@@ -123,7 +153,11 @@ class Animade:
         return response
 
     async def qq(self, baseimage, mode=mode):
-        url = "https://ai.tu.qq.com/overseas/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"#"https://ai.tu.qq.com/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
+        proxy = Vars.PROXY
+        if Vars.LOCALCH:
+            url = "https://ai.tu.qq.com/overseas/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
+        else:
+            url = "https://ai.tu.qq.com/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
         data = {
             "busiId": mode,
             "extra": "{\"face_rects\":[],\"version\":2,\"platform\":\"web\",\"data_report\":{\"parent_trace_id\":\"2ac8ec9d-a574-7952-0f8c-e80f2adf7105\",\"root_channel\":\"\",\"level\":0}}",#'{"face_rects":[],"version":2,"platform":"web","data_report":{"parent_trace_id":"2ac8ec9d-a574-7952-0f8c-e80f2adf7105","root_channel":"","level":0}}',
@@ -143,7 +177,7 @@ class Animade:
             async with session.post(url, 
                                     json=data, 
                                     headers=headers,
-                                    proxy="http://dqwelxzk:ngkidbpl2ci0@45.155.68.129:8133"
+                                    proxy=proxy
                                     ) as resp:
                 response: dict = await resp.json()
         return response
@@ -151,9 +185,11 @@ class Animade:
     async def process(self, filename):
         baseImage = base64.encodebytes(open(filename, "rb").read()).decode()
         if self.MODE == "qq":
-            image = await self.concat(filename)
-            baseImage = base64.encodebytes(open(image, "rb").read()).decode()
-            return await self.qq(baseImage)
+            baseImage = base64.encodebytes(open(filename, "rb").read()).decode()
+            result = await self.qq(baseImage)
+            if result['code'] == 1001:
+                result = await self.qq(base64.b64encode((await self.face_hack(filename))).decode('utf-8'))
+            return result
         elif self.MODE == "vid":
             return await self.qq(baseImage, mode="ai_painting_anime_video_entry")
         elif self.MODE == "3d":
