@@ -7,7 +7,7 @@ import hashlib
 import requests
 from PIL import Image
 from io import BytesIO
-from aiohttp import ClientSession
+from aiohttp import ClientSession, ClientTimeout
 from urllib.parse import quote
 from telethon import Button
 
@@ -80,7 +80,7 @@ class Animade:
 
     async def save_crop(self, url, strip=False):
         output_name = ''.join(random.choices("abcdefghijklmnopqrstuvwxyz1234567890", k=6)) + ".jpg"
-        image_bytes = requests.get(url).content
+        image_bytes = requests.get(url, timeout=2).content
         with open(output_name, "wb") as img:
             img.write(image_bytes)
         image = Image.open(output_name)
@@ -92,13 +92,7 @@ class Animade:
             image.crop((22, (h-170)/2, w-22, h-210)).save(f"sec{output_name}")
         return [output_name, f"sec{output_name}"]
 
-    async def auth(self, data: dict):
-        r = json.dumps(data)
-        pattern = "/%[89ABab]/g"
-        parse = quote(r)
-        count = sum(1 for _ in re.finditer(pattern, parse))
-        return hashlib.md5(f"https://h5.tu.qq.com{len(r)+count}HQ31X02e".encode()).hexdigest()
-
+    
     async def qq3d(self, baseimage):
         url = "https://openapi.mtlab.meitu.com/v1/stable_diffusion_anime"
         headers = {
@@ -153,8 +147,17 @@ class Animade:
                                     json=json_data, 
                                     ) as resp:
                 response: dict = await resp.json()
+                print(response)
         return response
 
+    def auth(self, data: dict):
+        r = json.dumps(data)
+        pattern = "/%[89ABab]/g"
+        parse = quote(r)
+        count = sum(1 for _ in re.finditer(pattern, parse))
+        return hashlib.md5(f"https://h5.tu.qq.com{len(r)+count}HQ31X02e".encode()).hexdigest()
+
+      
     async def qq(self, baseimage, mode=mode):
         proxy = Vars.PROXY
         if Vars.LOCALCH:
@@ -163,7 +166,7 @@ class Animade:
             url = "https://ai.tu.qq.com/overseas/trpc.shadow_cv.ai_processor_cgi.AIProcessorCgi/Process"
         data = {
             "busiId": mode,
-            "extra": "{\"face_rects\":[],\"version\":2,\"platform\":\"web\",\"data_report\":{\"parent_trace_id\":\"2ac8ec9d-a574-7952-0f8c-e80f2adf7105\",\"root_channel\":\"\",\"level\":0}}",#'{"face_rects":[],"version":2,"platform":"web","data_report":{"parent_trace_id":"2ac8ec9d-a574-7952-0f8c-e80f2adf7105","root_channel":"","level":0}}',
+            "extra": '{"face_rects":[],"version":2,"platform":"web","data_report":{"parent_trace_id":"2ac8ec9d-a574-7952-0f8c-e80f2adf7105","root_channel":"","level":0}}',
             "images": [baseimage]
         }
         headers = {
@@ -172,15 +175,16 @@ class Animade:
             'Origin': 'https://h5.tu.qq.com',
             'Referer': 'https://h5.tu.qq.com/',
             'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/107.0.0.0 Safari/537.36',
-            'x-sign-value': str(await self.auth(data)),
+            'x-sign-value': str(self.auth(data)),
             'x-sign-version': 'v1',
         }
-        
-        async with ClientSession() as session:
+        timeout = ClientTimeout(total=15)
+        async with ClientSession(timeout=timeout) as session:
             async with session.post(url, 
                                     json=data, 
                                     headers=headers,
-                                    proxy=proxy
+                                    proxy=proxy,
+                                    timeout=timeout
                                     ) as resp:
                 response: dict = await resp.json()
         return response
@@ -189,13 +193,20 @@ class Animade:
         retries = 7
         if self.MODE == "3d":
             result = await self.qq3d(base64.encodebytes(open(filename, "rb").read()).decode())
-            return result['media_info_list'][0]['media_data']
-        
+            try:
+                result = result['media_info_list'][0]['media_data']
+            except:
+                await event.edit("The Service Animade use for 3d generation is down please wait for it to get back.", buttons=[Button.url("Support", url="https://t.me/execalchat")])
+                return None
         elif self.MODE == "qq":
             baseImage = base64.encodebytes(open(filename, "rb").read()).decode()
             result = await self.qq(baseImage)
             if result['code'] == 1001:
                 result = await self.qq(base64.b64encode((await self.face_hack(filename))).decode('utf-8'))
+            elif result['code'] == 2114:
+                os.remove(filename)
+                await event.edit(f"Image rejected because of Nudity.\nBuy me a coffee and I'll allow that for you.✨ [Support chat](https://t.me/execals)", buttons=[Button.url("Support", url="https://t.me/execal")])
+                return None
             while result['code'] == 2111 and retries > 0:
                 retries -= 1
                 result = await self.qq(event, baseImage)
@@ -203,6 +214,7 @@ class Animade:
                 os.remove(filename)
                 await event.edit(f'Error :`{result["msg"]}`\n\nIf you would like to support this free project and move it to better server with less errors. Contact @zarox', buttons=[Button.url("Support", url="https://t.me/execal")])
                 return None
+            print(result)
             output = json.loads(result['extra'])['img_urls'][0]
             output = await self.save_crop(output)
             return output

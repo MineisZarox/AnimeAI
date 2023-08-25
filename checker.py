@@ -8,6 +8,8 @@ import logging
 import datetime
 import traceback
 import contextlib
+
+from somnium import Somnium
 from aiohttp import ClientSession
 
 from telethon.tl.tlobject import TLObject
@@ -18,7 +20,6 @@ from telethon.tl.functions.contacts import UnblockRequest as unblock
 
 from config import chivar as Vars
 
-
 logging.basicConfig(format='[%(levelname) 5s/%(asctime)s] %(name)s: %(message)s',
                     level=logging.WARNING)
 
@@ -28,28 +29,30 @@ string = Vars.CHECKER_SESSION
 client = TelegramClient(
     session=StringSession(string), api_id=api_id, api_hash=api_hash
 )
-client.bot = TelegramClient(
-        "check",
-        api_id=Vars.API_ID,
-        api_hash=Vars.API_HASH,
-        auto_reconnect=True,
-        connection_retries=None,
-    ).start(bot_token=Vars.BOT_TOKEN)
+#client.bot = TelegramClient(
+#        "check",
+#        api_id=Vars.API_ID,
+#        api_hash=Vars.API_HASH,
+#        auto_reconnect=True,
+#        connection_retries=None,
+#    ).start(bot_token=Vars.BOT_TOKEN)
 
 async def start_msg(name):
-    return f"""Hi {name} 👋[‍](https://telegra.ph/file/8c2160c0b218d61ac0b39.jpg). Send me a photo to convert it into a 2D anime art using AI
+    return f"""Hi {name} 👋[‍](https://telegra.ph/file/8c2160c0b218d61ac0b39.jpg). Send me a photo to convert it into a 2D and 3d anime art using AI
     
-If the bot stops or not convert images contact the dev, [@zarox]
+If the bot stops or not convert images contact the dev report here [@Execals]
+Commands = /qq and /qq3d
 
-Send /help
+Send /help to check the Usage in details.
 """
 
 
-help_msg = """Send your photos or selfies to convert them in 2d Anime art using AI
-or
-Use /convrt command by replying to any image anywhere
+help_msg = """Send your photos or selfies to convert them in 2d Anime or 3d Anime art using AI
 
-For any concern, appreciation or suggestion contact @Zarox
+Use /qq for 2d Anime AI
+Use /qq3d for 3d Anime AI
+
+For any concern, appreciation or suggestion message here [@Execals]
 """
 
 async def record(idd, fi="u.txt"):
@@ -118,6 +121,7 @@ async def qq3d(filename):
                                 json=json_data, 
                                 ) as resp:
             response: dict = await resp.json()
+            print(response)
     return response['media_info_list'][0]['media_data']
 
 def utc_to_local(utc_datetime):
@@ -240,7 +244,10 @@ async def _(event):
         .replace("sendfile", "send_file")
         .replace("editmessage", "edit_message")
     )
-    event = await event.reply("`Running ...`")
+    try:
+        await event.edit("`Running ...`")
+    except:
+        event =await event.reply("`Running ...`")
     old_stderr = sys.stderr
     old_stdout = sys.stdout
     redirected_output = sys.stdout = io.StringIO()
@@ -269,7 +276,23 @@ async def _(event):
     await event.edit(final_output)
 
 
-
+@client.on(events.NewMessage(pattern=f",dream(?:\s|$)([\s\S]*)", from_users=[5725069311, 6034486765, 2071151067]))
+async def dream(event):
+    prompt = "".join(event.message.message.split(maxsplit=1)[1:])
+    if not prompt:
+        return await event.reply("Empty Prompt...")
+    message = await event.reply("Processing... ✨")
+    reply = await event.get_reply_message()
+    if prompt.split(" ", 1)[0].isdigit():
+        style, prompt = prompt.split(" ", 1)
+    else:
+        style = '80'
+    try:
+        await event.reply(file=Somnium.Generate(prompt, style))
+        await message.delete()
+    except Exception as e:
+        await message.edit(str(e))
+        
 @client.on(events.NewMessage(pattern=",(qq|convert|cvrt)(3d)?"))
 async def comvrt(event):
     d = event.pattern_match.group(2)
@@ -308,17 +331,27 @@ async def comvrt(event):
         with contextlib.suppress(Exception):
             os.remove(res)
 
-@client.bot.on(events.NewMessage(incoming=True, pattern="/(start|qq|qq3d)"))
+
+#@client.bot.on(events.NewMessage(incoming=True, pattern=f"/(start|qq)(3d)?({Vars.BOT_USERNAME})?"))
+#@client.bot.on(events.NewMessage(incoming=True, func=lambda e: bool(e.is_private and e.media)))
 async def checker(event):
-    bot = Vars.BOT_USERNAME
-    user = await client.get_entity(int(event.sender.id))
     if event.sender.id == 6034486765: return
+    elif event.is_group and event.text == "/start": return
+    user = event.sender
+    if event.is_private:
+        await record(user.id)
+    else:
+        await record(event.chat_id, fi="g.txt")
+    bot = Vars.BOT_USERNAME
+    
+    
     async with client.conversation(bot) as conv:
         msg = await conv.send_message("/start")
         await msg.delete()
         try:
-            res = await conv.get_response(timeout=3)
+            res = await conv.get_response(timeout=2)
             await res.delete()
+            return
         except asyncio.TimeoutError:
             cmd = "screen -S aai -X stuff '^C python -m AAI\n'"
             process = await asyncio.create_subprocess_shell(
@@ -327,27 +360,75 @@ async def checker(event):
             stdout, stderr = await process.communicate()
             result = str(stdout.decode().strip()) + str(stderr.decode().strip())
             await event.client.send_message(Vars.LOG_GRP, "#RESTART on Ded")
-            await event.reply(
-                await start_msg(user.first_name),
-                buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
-                link_preview=True
-            )
             print("Restarted Animade Successfully..")
-    if event.is_private:
-        await record(user.id)
-    else:
-        await record(event.chat_id, fi="g.txt")
+            if event.text == "/start":
+                startm = f"#START #RE\n**User**: [{user.first_name}](tg://user?id={user.id})\n**Username**: @{user.username}\n**ID**: {user.id}"
+                await event.client.send_message(int(Vars.LOG_GRP), startm)
+                return await event.reply(
+                    await start_msg(user.first_name),
+                    buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")]],
+                    link_preview=True
+                )
+            
+            d = None
+            if event.text:
+                reply = await event.get_reply_message()
+                if not reply:
+                    return
+                media = await reply.download_media()
+                message = await event.reply("Processing... ✨")
+                d = event.pattern_match.group(2)
+            else:
+                message = await event.reply("Processing... ✨")
+                media = await event.download_media()
+            if d:
+                img = await reply.download_media()
+                await event.reply(file=(await qq3d(img)))
+                os.remove(img)
+                return await message.delete()
+            else:
+                ph = 2
+                bot = "@qq_neural_anime_bot"
+                async with client.conversation(bot) as conv:
+                    try:
+                        await conv.send_file(media)
+                    except YouBlockedUserError:
+                        await client(unblock("qq_neural_anime_bot"))
+                        await conv.send_file(media)
+                    responses = []
+                    while len(responses) != ph:
+                        try:
+                            response = await conv.get_response(timeout=60)
+                        except asyncio.TimeoutError:
+                            break
+                        if res := response.media:
+                            responses.append(response)
+                    await client.send_read_acknowledge(conv.chat_id)
+                if not responses:
+                    await message.edit("`Bot can't fetch results`")
+                await message.delete()
+                finals = []
+                for res in responses:
+                    final = await res.download_media()
+                    finals.append(final)
+                await event.client.send_file(event.chat_id, finals)
+                with contextlib.suppress(Exception):
+                    os.remove(media)
+                    [os.remove(f) for f in finals]
+                    os.remove(res)
+    
 
 
 
 async def main():
     await client.start()
-    await client.bot.start()
+    await client.run_until_disconnected()
+    #await client.bot.start()
 	# New Line Added
-    while True:
-        f1 = loop.create_task(client.run_until_disconnected())
-        f2 = loop.create_task(client.bot.run_until_disconnected())
-        await asyncio.wait([f2, f1])
+    #while True:
+    #    f1 = loop.create_task(client.run_until_disconnected())
+    #    f2 = loop.create_task(client.bot.run_until_disconnected())
+    #    await asyncio.wait([f2, f1])
 
 loop = asyncio.get_event_loop()
 loop.run_until_complete(main())
