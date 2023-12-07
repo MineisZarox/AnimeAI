@@ -205,7 +205,7 @@ class Animade:
                 result = await self.qq(base64.b64encode((await self.face_hack(filename))).decode('utf-8'))
             elif result['code'] == 2114:
                 os.remove(filename)
-                await event.edit(f"Image rejected because of Nudity.\nBuy me a coffee and I'll allow that for you.✨ [Support chat](https://t.me/execals)", buttons=[Button.url("Support", url="https://t.me/execal")])
+                await event.edit(f"Image rejected because of Nudity.\nBuy me a coffee and I'll allow that for you.✨ [Support chat](https://t.me/execalchat)", buttons=[Button.url("Support", url="https://t.me/execal")])
                 return None
             while result['code'] == 2111 and retries > 0:
                 retries -= 1

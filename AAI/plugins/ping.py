@@ -13,7 +13,7 @@ async def start(event):
     user = await aai.get_entity(int(event.sender.id))
     if event.is_group: await event.reply(
         await start_msg(user.first_name),
-        buttons=[[Button.url("Dev", "https://t.me/zarox")], [Button.url("Updates", "https://t.me/execal")], [Button.url("Support", "https://t.me/execalchat")]],
+        buttons=[[Button.url("Dev", "https://t.me/execalchat")], [Button.url("Updates", "https://t.me/execal")], [Button.url("Support", "https://t.me/execalchat")]],
         link_preview=True
     )
     await record(event.chat_id, fi="g.txt")
